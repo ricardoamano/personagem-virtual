@@ -372,6 +372,7 @@ function frame() {
 
 loadRobot();
 frame();
+$('boot')?.remove();
 
 // ganchos para testes automaticos
 window.__nestor = { THREE, scene, camera, mouth, lip, get robot() { return robot; }, loadGLB, autoPlaceMouth, stage };

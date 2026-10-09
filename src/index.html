@@ -34,6 +34,20 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="boot" style="position:fixed;left:316px;right:16px;top:16px;padding:12px 14px;background:#3a2a10;border:1px solid #c28a1e;border-radius:8px;color:#ffe3a3;font:13px/1.45 system-ui,sans-serif;z-index:5">
+  Carregando… Se esta mensagem <b>não sumir</b>, o navegador bloqueou o programa.
+  Feche e abra o arquivo direto no <b>Google Chrome</b> (clique com o botão direito no arquivo → Abrir com → Google Chrome).
+</div>
+<script>
+  window.addEventListener('error', function (e) {
+    var b = document.getElementById('boot');
+    if (!b) return;
+    b.style.background = '#40161a'; b.style.borderColor = '#d9534f'; b.style.color = '#ffd2d0';
+    b.innerHTML = '<b>Não consegui iniciar o 3D.</b><br>Detalhe técnico: ' + (e.message || e.error) +
+      '<br><br>Tente: Chrome → Configurações → Sistema → ligar <b>"Usar aceleração de hardware quando disponível"</b> → reiniciar o Chrome. ' +
+      'Confira também em <b>chrome://gpu</b> se "WebGL" aparece como "Hardware accelerated". Depois me mande um print desta tela.';
+  });
+</script>
 
 <div id="panel">
   <h1>Personagem Virtual</h1>
