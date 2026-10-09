@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personagem Virtual — teste</title>
+<style>
+  :root { color-scheme: dark; --bg:#14181f; --fg:#e8ecf1; --mut:#9aa7b6; --acc:#3d8bfd; --line:#2a323d; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; font:14px/1.4 system-ui, sans-serif; color:var(--fg); }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #panel { position:fixed; top:0; left:0; bottom:0; width:300px; overflow:auto; padding:14px 16px 24px;
+           background:rgba(20,24,31,.93); border-right:1px solid var(--line); box-sizing:border-box; }
+  #panel.hidden { display:none; }
+  h1 { font-size:15px; margin:0 0 2px; }
+  .sub { color:var(--mut); font-size:12px; margin-bottom:12px; }
+  h2 { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin:16px 0 6px; }
+  button, select, input[type=file]::file-selector-button {
+    font:inherit; color:var(--fg); background:#202733; border:1px solid var(--line); border-radius:6px; padding:6px 10px; cursor:pointer; }
+  button:hover { border-color:var(--acc); }
+  button.on { background:var(--acc); border-color:var(--acc); color:#fff; }
+  select { width:100%; box-sizing:border-box; margin-top:4px; }
+  input[type=range] { width:100%; }
+  input[type=file] { width:100%; font-size:12px; color:var(--mut); }
+  .row { display:flex; gap:6px; flex-wrap:wrap; }
+  #anims { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  #anims button { text-align:left; }
+  .vu { height:8px; background:#202733; border-radius:4px; overflow:hidden; margin:6px 0 2px; }
+  #vu { height:100%; width:0; background:var(--acc); }
+  #status { margin-top:14px; padding:8px 10px; background:#1a212b; border-radius:6px; font-size:12px; min-height:32px; }
+  .keys { color:var(--mut); font-size:12px; }
+  kbd { background:#202733; border:1px solid var(--line); border-radius:4px; padding:0 5px; font:11px ui-monospace, monospace; color:var(--fg); }
+  label { font-size:12px; color:var(--mut); display:block; margin-top:8px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="panel">
+  <h1>Personagem Virtual</h1>
+  <div class="sub">Teste de viabilidade · Neostore</div>
+
+  <h2>Personagem</h2>
+  <div class="row"><button id="robotBtn">Robô de teste</button></div>
+  <label>Modelo 3D (.glb) — ou arraste para a tela</label>
+  <input id="glbFile" type="file" accept=".glb,.gltf">
+
+  <h2>Animações</h2>
+  <div id="anims"></div>
+
+  <h2>Voz e boca</h2>
+  <div class="row"><button id="micBtn">Ligar microfone</button></div>
+  <select id="mic"><option value="">Microfone padrão</option></select>
+  <label>Sensibilidade</label>
+  <input id="sens" type="range" min="0.3" max="3" step="0.05" value="1">
+  <div class="vu"><div id="vu"></div></div>
+  <div class="keys">Forma da boca: <b id="viseme">Fechada</b></div>
+
+  <h2>Ajuste da boca</h2>
+  <div class="row"><button id="placeBtn">Posicionar boca (clicar no rosto)</button></div>
+  <label>Tamanho da boca</label>
+  <input id="mouthSize" type="range" min="0.03" max="0.8" step="0.005" value="0.34">
+  <label>Preso ao osso</label>
+  <select id="bone"></select>
+  <label>Imagens da boca (5 arquivos, em ordem alfabética)</label>
+  <input id="mouthFiles" type="file" accept="image/*" multiple>
+  <div class="row" style="margin-top:6px"><button id="resetMouth">Voltar à boca padrão</button></div>
+
+  <h2>Tela</h2>
+  <select id="bg">
+    <option value="azul">Fundo azul</option>
+    <option value="verde">Fundo verde (chroma key)</option>
+    <option value="cinza">Fundo cinza</option>
+    <option value="preto">Fundo preto</option>
+    <option value="branco">Fundo branco</option>
+  </select>
+  <div class="row" style="margin-top:6px"><button id="fsBtn">Tela cheia</button></div>
+
+  <h2>Teclas</h2>
+  <div class="keys">
+    <kbd>1</kbd>–<kbd>9</kbd> animações · <kbd>0</kbd> parar<br>
+    <kbd>Espaço</kbd> (segurar) fala simulada<br>
+    <kbd>Z X C V B</kbd> (segurar) força cada boca<br>
+    <kbd>M</kbd> microfone · <kbd>G</kbd> chroma · <kbd>F</kbd> tela cheia · <kbd>H</kbd> esconde painel<br>
+    Mouse: arrastar gira · roda dá zoom
+  </div>
+
+  <div id="status">Pronto.</div>
+</div>
+
+<!--BUNDLE-->
+</body>
+</html>

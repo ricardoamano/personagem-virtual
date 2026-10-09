@@ -1,0 +1,14 @@
+{
+  "name": "personagem-virtual",
+  "version": "0.0.1",
+  "private": true,
+  "description": "TESTE DE VIABILIDADE: personagem 3D cartoon ao vivo (animacoes por teclado + lip-sync por voz)",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "three": "^0.170.0"
+  }
+}
