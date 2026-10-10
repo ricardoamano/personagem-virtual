@@ -297,11 +297,18 @@ $('resetMouth').onclick = () => {
 
 // ---------- boca: posicao, tamanho, osso ----------
 let placing = false;
-$('placeBtn').onclick = () => {
-  placing = !placing;
+function setPlacing(on) {
+  placing = on;
   $('placeBtn').classList.toggle('on', placing);
   canvas.style.cursor = placing ? 'crosshair' : '';
-  setStatus(placing ? 'Clique no rosto do personagem, onde a boca deve ficar.' : 'Posicionamento desligado.');
+}
+$('placeBtn').onclick = () => {
+  setPlacing(!placing);
+  setStatus(
+    placing
+      ? 'Personagem parado. Clique no rosto, onde a boca deve ficar.'
+      : 'Posicionamento desligado. As animações voltaram a funcionar.',
+  );
 };
 $('mouthSize').oninput = (e) => mouth.setSize(parseFloat(e.target.value));
 $('bone').onchange = (e) => {
@@ -321,7 +328,8 @@ canvas.addEventListener('pointerup', (e) => {
   if (!hit || !mouth.node) return setStatus('Clique em cima do personagem.', true);
   const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
   mouth.place(mouth.node, hit.object, hit.point, n);
-  setStatus('Boca posicionada. Segure Espaço para testar.');
+  setPlacing(false);
+  setStatus('Boca posicionada. As animações voltaram a funcionar; segure Espaço para testar a boca.');
 });
 
 // ---------- microfone ----------
@@ -391,7 +399,9 @@ const VISEME_KEYS = { z: 0, x: 1, c: 2, v: 3, b: 4 };
 let simulate = false;
 let forced = -1;
 window.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, select, textarea')) return;
+  if (e.target.matches('textarea, input[type=text]')) return;
+  // tira o foco de botoes/listas/barras: senão o teclado fica "preso" nelas
+  if (e.target !== document.body && e.target.matches('button, select, input')) e.target.blur();
   const k = e.key.toLowerCase();
   if (e.repeat && k !== ' ') return;
   if (/^[1-9]$/.test(e.key)) anims[parseInt(e.key, 10) - 1]?.play();
