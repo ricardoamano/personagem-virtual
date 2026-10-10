@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
 // 5 formas de boca (visemes). Ordem importa: as imagens do usuario seguem esta ordem.
 export const VISEMES = [
@@ -74,13 +75,20 @@ function makeDefaultTexture(kind) {
   return t;
 }
 
-const _v = new THREE.Vector3();
-const _q = new THREE.Quaternion();
 const _m = new THREE.Matrix4();
 const _zero = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
-// A boca e um plano com a imagem da boca, preso a um osso/grupo da cabeca.
+// Volta qualquer personagem com esqueleto para a pose original (sem animacao).
+export function bindPose(root) {
+  root.traverse((o) => {
+    if (o.isSkinnedMesh) o.skeleton.pose();
+  });
+  root.updateMatrixWorld(true);
+}
+
+// A boca e uma "decalque": a imagem da boca e projetada e colada NA SUPERFICIE do rosto
+// (acompanha a curva), presa a um osso da cabeca.
 export class MouthSprite {
   constructor() {
     this.defaultTextures = VISEMES.map((_, i) => makeDefaultTexture(i));
@@ -89,60 +97,77 @@ export class MouthSprite {
       map: this.textures[0],
       transparent: true,
       toneMapped: false,
+      depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: -4,
       polygonOffsetUnits: -4,
     });
-    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
+    this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
     this.mesh.raycast = () => {}; // o clique "atravessa" a boca
     this.mesh.renderOrder = 10;
+    this.mesh.frustumCulled = false;
     this.size = 0.3; // largura em unidades do mundo (~metros)
     this.aspect = 160 / 256;
-    this.node = null;
+    this.node = null; // osso onde a boca fica presa
+    this.hit = null; // { mesh, point, normal } no mundo, na pose original
     this.current = 0;
+    this.hideWhenClosed = false;
   }
 
   setViseme(i) {
-    if (i === this.current) return;
     this.current = i;
     this.material.map = this.textures[i];
+    this.mesh.visible = !(this.hideWhenClosed && i === 0) && !!this.hit;
   }
 
   setSize(w) {
     this.size = w;
-    this.updateScale();
+    this.rebuild();
   }
 
-  updateScale() {
-    if (!this.node) return;
-    this.node.updateWorldMatrix(true, false);
-    this.node.getWorldScale(_v);
-    const s = _v.x || 1;
-    this.mesh.scale.set(this.size / s, (this.size * this.aspect) / s, 1);
-  }
-
-  // Muda o osso onde a boca fica preso, mantendo a posicao atual no mundo.
   setNode(node) {
-    if (!node) return;
-    node.attach(this.mesh);
     this.node = node;
-    this.updateScale();
+    this.rebuild();
   }
 
-  // Coloca a boca num ponto do mundo, virada para "normal" (direcao para fora da superficie).
-  placeAt(node, point, normal) {
-    if (this.mesh.parent !== node) {
-      node.add(this.mesh);
-    }
+  clear() {
+    this.mesh.removeFromParent();
+    this.hit = null;
+    this.node = null;
+    this.mesh.visible = false;
+  }
+
+  // Coloca a boca num ponto da superficie de "targetMesh" (ponto e normal no mundo).
+  place(node, targetMesh, point, normal) {
     this.node = node;
-    node.updateWorldMatrix(true, false);
-    const wp = _v.copy(point).addScaledVector(normal, this.size * 0.01);
-    this.mesh.position.copy(node.worldToLocal(wp));
-    _m.lookAt(normal, _zero, _up); // eixo z da boca = normal
-    const qWorld = new THREE.Quaternion().setFromRotationMatrix(_m);
-    node.getWorldQuaternion(_q);
-    this.mesh.quaternion.copy(_q.invert().multiply(qWorld));
-    this.updateScale();
+    this.hit = { mesh: targetMesh, point: point.clone(), normal: normal.clone().normalize() };
+    this.rebuild();
+  }
+
+  rebuild() {
+    if (!this.hit || !this.node) return;
+    const { mesh, point, normal } = this.hit;
+
+    let top = mesh;
+    while (top.parent) top = top.parent;
+    bindPose(top);
+
+    _m.lookAt(normal, _zero, _up); // eixo z da projecao = normal do rosto
+    const euler = new THREE.Euler().setFromRotationMatrix(_m);
+    const w = this.size;
+    const geo = new DecalGeometry(mesh, point, euler, new THREE.Vector3(w, w * this.aspect, w * 0.6));
+
+    // geometria vai para o espaco do osso: assim a boca acompanha a cabeca
+    this.node.updateWorldMatrix(true, false);
+    geo.applyMatrix4(new THREE.Matrix4().copy(this.node.matrixWorld).invert());
+
+    this.mesh.geometry.dispose();
+    this.mesh.geometry = geo;
+    if (this.mesh.parent !== this.node) this.node.add(this.mesh);
+    this.mesh.position.set(0, 0, 0);
+    this.mesh.quaternion.identity();
+    this.mesh.scale.set(1, 1, 1);
+    this.mesh.visible = true;
   }
 
   // Troca as 5 imagens por arquivos do usuario (ordem alfabetica = ordem dos visemes).
@@ -163,13 +188,13 @@ export class MouthSprite {
     const img = tex[0].image;
     this.aspect = img.height / img.width;
     this.material.map = this.textures[this.current];
-    this.updateScale();
+    this.rebuild();
   }
 
   resetImages() {
     this.textures = [...this.defaultTextures];
     this.aspect = 160 / 256;
     this.material.map = this.textures[this.current];
-    this.updateScale();
+    this.rebuild();
   }
 }

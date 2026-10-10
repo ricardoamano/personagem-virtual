@@ -7,7 +7,10 @@
 <style>
   :root { color-scheme: dark; --bg:#14181f; --fg:#e8ecf1; --mut:#9aa7b6; --acc:#3d8bfd; --line:#2a323d; }
   html, body { margin:0; height:100%; overflow:hidden; background:#000; font:14px/1.4 system-ui, sans-serif; color:var(--fg); }
+  #bgLayer { position:fixed; inset:0; background:#0d3b66; }
   canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .chk { display:flex; gap:6px; align-items:flex-start; font-size:12px; color:var(--mut); margin-top:8px; }
+  .chk input { margin-top:2px; }
   #panel { position:fixed; top:0; left:0; bottom:0; width:300px; overflow:auto; padding:14px 16px 24px;
            background:rgba(20,24,31,.93); border-right:1px solid var(--line); box-sizing:border-box; }
   #panel.hidden { display:none; }
@@ -33,6 +36,7 @@
 </style>
 </head>
 <body>
+<div id="bgLayer"></div>
 <canvas id="c"></canvas>
 <div id="boot" style="position:fixed;left:316px;right:16px;top:16px;padding:12px 14px;background:#3a2a10;border:1px solid #c28a1e;border-radius:8px;color:#ffe3a3;font:13px/1.45 system-ui,sans-serif;z-index:5">
   Carregando… Se esta mensagem <b>não sumir</b>, o navegador bloqueou o programa.
@@ -77,6 +81,7 @@
   <select id="bone"></select>
   <label>Imagens da boca (5 arquivos, em ordem alfabética)</label>
   <input id="mouthFiles" type="file" accept="image/*" multiple>
+  <label class="chk"><input id="hideClosed" type="checkbox"> Esconder a boca quando fechada (use se o personagem já tem boca pintada)</label>
   <div class="row" style="margin-top:6px"><button id="resetMouth">Voltar à boca padrão</button></div>
 
   <h2>Tela</h2>
@@ -86,7 +91,11 @@
     <option value="cinza">Fundo cinza</option>
     <option value="preto">Fundo preto</option>
     <option value="branco">Fundo branco</option>
+    <option value="consultorio">Consultório médico (cartoon)</option>
   </select>
+  <label>Imagem ou vídeo de fundo (JPG, PNG, MP4)</label>
+  <input id="bgFile" type="file" accept="image/*,video/*">
+  <label class="chk"><input id="shadowChk" type="checkbox" checked> Sombra no chão</label>
   <div class="row" style="margin-top:6px"><button id="fsBtn">Tela cheia</button></div>
 
   <h2>Teclas</h2>

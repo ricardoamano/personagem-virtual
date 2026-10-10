@@ -9,7 +9,7 @@
 |---|---|
 | Arquivo **.glb** | É o formato que o visualizador lê |
 | **Corpo inteiro** com rig humanoide (esqueleto) | Para tocar as animações |
-| **Rosto com boca fechada e expressão neutra** | A boca animada é colocada por cima; uma boca desenhada pela IA atrapalharia |
+| **Rosto SEM boca desenhada** | A boca animada é colada na superfície do rosto; uma boca já pintada ficaria por baixo e atrapalharia |
 | Pelo menos uma animação (ideal: uma "parado/idle") | Para o personagem não ficar duro |
 
 ## Passo a passo
@@ -20,13 +20,13 @@ Na Meshy: **Text to 3D**. Prompt-modelo (troque só a parte entre colchetes):
 ```
 cute cartoon [boy / girl / robot / doctor] mascot, full body, standing in neutral A-pose
 with arms slightly away from the body, facing front, big head, simple stylized proportions,
-closed mouth with a neutral expression, plain colors, no accessories in the hands,
+no mouth, smooth blank face below the nose, no lips, no mouth line, neutral expression, plain colors, no accessories in the hands,
 no cape, no loose hair or long clothes
 ```
 
 Por que cada parte existe:
 - **full body / A-pose / facing front** → o auto-rig só funciona bem com corpo inteiro, braços afastados e de frente.
-- **closed mouth, neutral expression** → deixa o rosto limpo para a nossa boca.
+- **no mouth, smooth blank face** → deixa o rosto limpo para a nossa boca. Se a IA desenhar uma boca mesmo assim, marque "Esconder a boca quando fechada" no visualizador.
 - **no cape, no loose hair, no long clothes** → roupas soltas deformam feio quando o corpo anima.
 - **big head, simple proportions** → combina com o estilo cartoon dos personagens da Neostore.
 
@@ -76,3 +76,22 @@ Importante: as 5 devem ter o **mesmo tamanho e enquadramento**, senão a boca "p
 - **Licença:** antes de usar um personagem em trabalho para cliente, confira os termos de uso comercial da ferramenta e do plano usado.
 - **Estilos muito diferentes** (olhos enormes, sem pescoço) podem exigir ajuste manual da boca.
 - Personagens **sem corpo humanoide** (animais de quatro patas, objetos) provavelmente não funcionam com o auto-rig humanoide.
+
+
+## Fundos (cenários)
+
+O visualizador aceita **imagem (JPG/PNG) ou vídeo (MP4)** como fundo, em "Imagem ou vídeo de fundo".
+Não precisa ser 3D: a imagem fica parada atrás do personagem. Já vem pronto o **Consultório médico (cartoon)**.
+
+Dicas para o fundo ficar bom:
+- formato **16:9** (1920×1080 ou maior);
+- **chão visível na parte de baixo**, com o centro livre para o personagem;
+- estilo cartoon parecido com o do personagem.
+
+Prompt-modelo para gerar um cenário:
+
+```
+cartoon [medical office / TV studio / stage / classroom] interior, wide shot, 16:9, flat colors with soft shading,
+clean simple shapes, bright friendly lighting, empty floor space in the center for a character to stand,
+the floor visible in the lower third, no people, no text
+```

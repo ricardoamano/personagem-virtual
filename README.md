@@ -28,9 +28,9 @@ com design e especificação aprovados.
 ## Como funciona
 
 - **Corpo:** animações do próprio arquivo .glb (ou do robô de teste), disparadas por tecla.
-- **Boca:** uma imagem que troca entre 5 formas (fechada, pequena, "A", "O/U", "E/I"), presa ao osso da cabeça.
+- **Boca:** uma imagem que troca entre 5 formas (fechada, pequena, "A", "O/U", "E/I"), projetada na superfície do rosto e presa ao osso da cabeça.
 - **Lip-sync:** o volume da voz define a abertura; o timbre escolhe a vogal. É uma heurística — boa para ao vivo, não perfeita.
-- **Saída:** janela em tela cheia para projetor, TV ou LED. Fundo verde opcional.
+- **Saída:** janela em tela cheia para projetor, TV ou LED. Fundo: cor, chroma key (verde), imagem, vídeo ou o cenário pronto de consultório.
 
 ## Desenvolvimento
 

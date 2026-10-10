@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Robot } from './robot.js';
-import { MouthSprite, VISEMES } from './mouth.js';
+import { MouthSprite, VISEMES, bindPose } from './mouth.js';
+import { officeDataURL } from './backgrounds.js';
 import { LipSync } from './lipsync.js';
 
 const $ = (id) => document.getElementById(id);
 
 // ---------- cena ----------
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setClearColor(0x000000, 0); // fundo transparente: o cenario e uma camada HTML atras
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 100);
@@ -24,14 +26,35 @@ const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(2.5, 4, 4);
 scene.add(sun);
 
-const BACKGROUNDS = {
-  azul: 0x0d3b66,
-  verde: 0x00b140, // chroma key
-  cinza: 0x3a3f47,
-  preto: 0x000000,
-  branco: 0xffffff,
+// ---------- fundo (camada HTML atras do 3D: cor, imagem ou video) ----------
+const BG_COLORS = {
+  azul: '#0d3b66',
+  verde: '#00b140', // chroma key
+  cinza: '#3a3f47',
+  preto: '#000000',
+  branco: '#ffffff',
 };
-scene.background = new THREE.Color(BACKGROUNDS.azul);
+let bgKey = 'azul';
+function setBackground(key, fileUrl, isVideo) {
+  const layer = $('bgLayer');
+  layer.innerHTML = '';
+  layer.style.background = '';
+  bgKey = key;
+  if (key in BG_COLORS) layer.style.background = BG_COLORS[key];
+  else if (key === 'consultorio') layer.style.background = `center / cover no-repeat url("${officeDataURL()}")`;
+  else if (isVideo) {
+    const v = document.createElement('video');
+    v.src = fileUrl;
+    v.autoplay = true;
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+    layer.appendChild(v);
+    v.play().catch(() => {});
+  } else layer.style.background = `center / cover no-repeat url("${fileUrl}")`;
+  updateShadow();
+}
 
 function resize() {
   const w = window.innerWidth;
@@ -46,6 +69,27 @@ resize();
 // ---------- personagem ----------
 const stage = new THREE.Group();
 scene.add(stage);
+// sombra suave no chao: ajuda o personagem a "pisar" no cenario
+const shadowCanvas = document.createElement('canvas');
+shadowCanvas.width = shadowCanvas.height = 128;
+{
+  const g = shadowCanvas.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(0,0,0,0.38)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+}
+const shadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.7, 1.7),
+  new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shadowCanvas), transparent: true, depthWrite: false }),
+);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = 0.004;
+scene.add(shadow);
+function updateShadow() {
+  shadow.visible = $('shadowChk').checked && bgKey !== 'verde';
+}
 const mouth = new MouthSprite();
 const lip = new LipSync();
 
@@ -59,8 +103,7 @@ let bones = [];
 let characterHeight = 2;
 
 function clearStage() {
-  mouth.mesh.removeFromParent();
-  mouth.node = null;
+  mouth.clear();
   stage.clear();
   robot = null;
   mixer = null;
@@ -109,17 +152,17 @@ function guessHeadBone(list) {
   return [...list].sort((a, b) => score(b) - score(a))[0];
 }
 
-// Procura a superficie do rosto de frente e coloca a boca la.
+// Procura a superficie do rosto de frente e cola a boca la.
 function autoPlaceMouth(yFrac) {
+  bindPose(stage);
   const ray = new THREE.Raycaster(
     new THREE.Vector3(0, characterHeight * yFrac, 8),
     new THREE.Vector3(0, 0, -1),
   );
-  stage.updateMatrixWorld(true);
   const hit = ray.intersectObjects(stage.children, true)[0];
   if (!hit || !mouth.node) return false;
   const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-  mouth.placeAt(mouth.node, hit.point, n);
+  mouth.place(mouth.node, hit.object, hit.point, n);
   return true;
 }
 
@@ -133,12 +176,12 @@ function loadRobot() {
   anims = robot.actions.map((a, i) => ({ name: a.name, play: () => robot.play(i) }));
   refreshAnimList();
   refreshBoneList(robot.head);
-  mouth.setSize(0.34);
-  $('mouthSize').value = '0.34';
-  mouth.placeAt(robot.head, new THREE.Vector3(0, 1.36, 0.39), new THREE.Vector3(0, 0, 1));
-  mouth.mesh.rotation.set(0, 0, 0);
-  mouth.mesh.quaternion.identity();
-  mouth.mesh.position.set(0, -0.14, 0.395);
+  robot.restRoot.y = -0.125; // pes encostam no chao
+  robot.root.position.copy(robot.restRoot);
+  mouth.size = 0.5;
+  $('mouthSize').value = '0.5';
+  mouth.node = robot.head;
+  autoPlaceMouth(1.25 / 1.95);
   controls.target.set(0, 1.0, 0);
   setStatus('Robô de teste carregado.');
 }
@@ -205,9 +248,9 @@ async function loadGLB(file) {
   }));
   refreshAnimList();
 
-  mouth.setSize(0.16);
+  mouth.size = 0.16;
   $('mouthSize').value = '0.16';
-  mouth.placeAt(head, new THREE.Vector3(0, 1.6, 0.2), new THREE.Vector3(0, 0, 1));
+  mouth.node = head;
   const ok = autoPlaceMouth(0.8);
   setStatus(
     `${file.name} carregado: ${glbClips.length} animações, ${bones.length} ossos. ` +
@@ -274,11 +317,10 @@ canvas.addEventListener('pointerup', (e) => {
   const ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   const ray = new THREE.Raycaster();
   ray.setFromCamera(ndc, camera);
-  stage.updateMatrixWorld(true);
   const hit = ray.intersectObjects(stage.children, true)[0];
   if (!hit || !mouth.node) return setStatus('Clique em cima do personagem.', true);
   const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-  mouth.placeAt(mouth.node, hit.point, n);
+  mouth.place(mouth.node, hit.object, hit.point, n);
   setStatus('Boca posicionada. Segure Espaço para testar.');
 });
 
@@ -315,7 +357,26 @@ $('micBtn').onclick = toggleMic;
 $('mic').onchange = () => lip.active && lip.start($('mic').value).catch(fail);
 
 // ---------- fundo, tela cheia, painel ----------
-$('bg').onchange = (e) => (scene.background = new THREE.Color(BACKGROUNDS[e.target.value]));
+$('bg').onchange = (e) => setBackground(e.target.value);
+$('bgFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  let opt = [...$('bg').options].find((o) => o.value === 'arquivo');
+  if (!opt) {
+    opt = document.createElement('option');
+    opt.value = 'arquivo';
+    $('bg').appendChild(opt);
+  }
+  opt.textContent = `Arquivo: ${f.name}`;
+  $('bg').value = 'arquivo';
+  setBackground('arquivo', url, f.type.startsWith('video'));
+  setStatus(`Fundo: ${f.name}`);
+});
+$('shadowChk').onchange = updateShadow;
+$('hideClosed').onchange = (e) => {
+  mouth.hideWhenClosed = e.target.checked;
+};
 function toggleFullscreen() {
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen?.();
@@ -360,8 +421,12 @@ const clock = new THREE.Clock();
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   controls.update();
-  if (robot) robot.update(dt);
-  if (mixer) mixer.update(dt);
+  if (placing) {
+    bindPose(stage); // congela o personagem na pose original para posicionar a boca
+  } else {
+    if (robot) robot.update(dt);
+    if (mixer) mixer.update(dt);
+  }
   const v = lip.update(dt, parseFloat($('sens').value), simulate, forced);
   mouth.setViseme(v);
   $('vu').style.width = `${Math.round(lip.open * 100)}%`;
@@ -370,9 +435,10 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
+setBackground('azul');
 loadRobot();
 frame();
 $('boot')?.remove();
 
 // ganchos para testes automaticos
-window.__nestor = { THREE, scene, camera, mouth, lip, get robot() { return robot; }, loadGLB, autoPlaceMouth, stage };
+window.__nestor = { THREE, scene, camera, mouth, lip, get robot() { return robot; }, loadGLB, autoPlaceMouth, stage, setBackground };
