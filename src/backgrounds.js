@@ -32,12 +32,48 @@ function books(x, y) {
   return s;
 }
 
-export function officeSVG() {
+const WIN_W = 372; // largura do vidro da janela (as nuvens andam essa distancia e recomecam)
+
+function clouds(dx) {
+  return `<g transform="translate(${dx} 0)">
+  <ellipse cx="240" cy="230" rx="62" ry="26" fill="#fff"/><ellipse cx="290" cy="214" rx="44" ry="26" fill="#fff"/>
+  <ellipse cx="410" cy="320" rx="56" ry="22" fill="#fff"/><ellipse cx="452" cy="306" rx="34" ry="20" fill="#fff"/></g>`;
+}
+
+// batimento repetido ao longo da tela do monitor (periodo de 108 px)
+function ecgPath() {
+  let d = '';
+  for (let k = 0; k < 5; k++) {
+    const x = 1376 + k * 108;
+    d += `M${x},500 L${x + 30},500 L${x + 42},468 L${x + 58},526 L${x + 72},490 L${x + 86},500 L${x + 108},500 `;
+  }
+  return d;
+}
+
+// animated=true: o mesmo cenario com movimento (nuvens, relogio, monitor, planta, luz). Ciclo de 12 s.
+export function officeSVG(animated = false) {
+  const A = animated;
+  const cloudBlock = A
+    ? `<g clip-path="url(#winClip)"><g><animateTransform attributeName="transform" type="translate" from="0 0" to="${WIN_W} 0" dur="12s" repeatCount="indefinite"/>${clouds(0)}${clouds(-WIN_W)}</g></g>`
+    : clouds(0);
+  const secondHand = A
+    ? `<line x1="960" y1="170" x2="960" y2="118" stroke="#e4572e" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" calcMode="discrete" dur="12s" repeatCount="indefinite" keyTimes="0;0.0833;0.1667;0.25;0.3333;0.4167;0.5;0.5833;0.6667;0.75;0.8333;0.9167" values="0 960 170;30 960 170;60 960 170;90 960 170;120 960 170;150 960 170;180 960 170;210 960 170;240 960 170;270 960 170;300 960 170;330 960 170"/></line>`
+    : '';
+  const ecg = A
+    ? `<g clip-path="url(#ecgClip)"><path d="${ecgPath()}" fill="none" stroke="#1f6f57" stroke-width="6" stroke-linejoin="round"><animateTransform attributeName="transform" type="translate" from="0 0" to="-108 0" dur="1.2s" repeatCount="indefinite"/></path></g>`
+    : `<polyline points="1492,500 1524,500 1536,468 1552,526 1566,490 1580,500 1638,500" fill="none" stroke="#1f6f57" stroke-width="6" stroke-linejoin="round"/>`;
+  const sway = (inner) =>
+    A
+      ? `<g><animateTransform attributeName="transform" type="rotate" values="-2 1846 640;2 1846 640;-2 1846 640" dur="4s" repeatCount="indefinite"/>${inner}</g>`
+      : inner;
+  const glowAnim = A ? '<animate attributeName="opacity" values=".28;.45;.28" dur="6s" repeatCount="indefinite"/>' : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
 <defs>
   <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3f4f5"/><stop offset="1" stop-color="#bfe3e6"/></linearGradient>
   <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ec8f5"/><stop offset="1" stop-color="#dff3ff"/></linearGradient>
   <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <clipPath id="winClip"><rect x="134" y="134" width="372" height="312"/></clipPath>
+  <clipPath id="ecgClip"><rect x="1484" y="454" width="162" height="88"/></clipPath>
   <clipPath id="floorClip"><rect x="0" y="700" width="1920" height="380"/></clipPath>
 </defs>
 
@@ -51,13 +87,12 @@ export function officeSVG() {
 
 <!-- luz do teto -->
 <rect x="540" y="0" width="840" height="34" rx="10" fill="#ffffff" stroke="${O}" stroke-width="5"/>
-<polygon points="560,34 1360,34 1560,420 360,420" fill="url(#glow)" opacity=".35"/>
+<polygon points="560,34 1360,34 1560,420 360,420" fill="url(#glow)" opacity=".35">${glowAnim}</polygon>
 
 <!-- janela -->
 <rect x="110" y="110" width="420" height="360" rx="18" fill="#ffffff" stroke="${O}" stroke-width="8"/>
 <rect x="134" y="134" width="372" height="312" rx="8" fill="url(#sky)" stroke="${O}" stroke-width="5"/>
-<ellipse cx="240" cy="230" rx="62" ry="26" fill="#fff"/><ellipse cx="290" cy="214" rx="44" ry="26" fill="#fff"/>
-<ellipse cx="410" cy="320" rx="56" ry="22" fill="#fff"/><ellipse cx="452" cy="306" rx="34" ry="20" fill="#fff"/>
+${cloudBlock}
 <rect x="314" y="134" width="12" height="312" fill="#fff" stroke="${O}" stroke-width="4"/>
 <rect x="134" y="284" width="372" height="12" fill="#fff" stroke="${O}" stroke-width="4"/>
 <rect x="96" y="466" width="448" height="26" rx="8" fill="#ffffff" stroke="${O}" stroke-width="6"/>
@@ -76,6 +111,7 @@ export function officeSVG() {
 <circle cx="960" cy="170" r="62" fill="#ffffff" stroke="${O}" stroke-width="8"/>
 <line x1="960" y1="170" x2="960" y2="126" stroke="${O}" stroke-width="7" stroke-linecap="round"/>
 <line x1="960" y1="170" x2="992" y2="186" stroke="${O}" stroke-width="7" stroke-linecap="round"/>
+${secondHand}
 <circle cx="960" cy="170" r="6" fill="#e4572e"/>
 
 <!-- cruz medica -->
@@ -115,19 +151,19 @@ ${books(1440, 230)}
 <line x1="1390" y1="646" x2="1580" y2="646" stroke="${O}" stroke-width="5"/>
 <rect x="1470" y="440" width="190" height="118" rx="12" fill="#223a42" stroke="${O}" stroke-width="7"/>
 <rect x="1484" y="454" width="162" height="88" rx="6" fill="#8fe0c1"/>
-<polyline points="1492,500 1524,500 1536,468 1552,526 1566,490 1580,500 1638,500" fill="none" stroke="#1f6f57" stroke-width="6" stroke-linejoin="round"/>
+${ecg}
 <rect x="1546" y="558" width="40" height="8" fill="#223a42"/>
 <rect x="1700" y="520" width="44" height="40" rx="8" fill="#ffffff" stroke="${O}" stroke-width="5"/>
 <path d="M1744,530 q22,4 0,22" fill="none" stroke="${O}" stroke-width="5"/>
 
 <!-- planta -->
 <rect x="1812" y="610" width="70" height="90" rx="10" fill="#d9744a" stroke="${O}" stroke-width="6"/>
-<ellipse cx="1846" cy="560" rx="22" ry="62" fill="#58a55c" stroke="${O}" stroke-width="5" transform="rotate(-24 1846 560)"/>
+${sway(`<ellipse cx="1846" cy="560" rx="22" ry="62" fill="#58a55c" stroke="${O}" stroke-width="5" transform="rotate(-24 1846 560)"/>
 <ellipse cx="1846" cy="552" rx="22" ry="68" fill="#6bbd6f" stroke="${O}" stroke-width="5"/>
-<ellipse cx="1846" cy="560" rx="22" ry="62" fill="#58a55c" stroke="${O}" stroke-width="5" transform="rotate(24 1846 560)"/>
+<ellipse cx="1846" cy="560" rx="22" ry="62" fill="#58a55c" stroke="${O}" stroke-width="5" transform="rotate(24 1846 560)"/>`)}
 </svg>`;
 }
 
-export function officeDataURL() {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(officeSVG())}`;
+export function officeDataURL(animated = false) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(officeSVG(animated))}`;
 }

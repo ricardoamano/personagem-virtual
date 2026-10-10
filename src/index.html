@@ -25,8 +25,8 @@
   input[type=range] { width:100%; }
   input[type=file] { width:100%; font-size:12px; color:var(--mut); }
   .row { display:flex; gap:6px; flex-wrap:wrap; }
-  #anims { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-  #anims button { text-align:left; }
+  #anims, #cams { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  #anims button, #cams button { text-align:left; }
   .vu { height:8px; background:#202733; border-radius:4px; overflow:hidden; margin:6px 0 2px; }
   #vu { height:100%; width:0; background:var(--acc); }
   #status { margin-top:14px; padding:8px 10px; background:#1a212b; border-radius:6px; font-size:12px; min-height:32px; }
@@ -58,12 +58,18 @@
   <div class="sub">Teste de viabilidade · Neostore</div>
 
   <h2>Personagem</h2>
-  <div class="row"><button id="robotBtn">Robô de teste</button></div>
+  <div class="row"><button id="doctorBtn">Médico</button><button id="robotBtn">Robô de teste</button></div>
   <label>Modelo 3D (.glb) — ou arraste para a tela</label>
   <input id="glbFile" type="file" accept=".glb,.gltf">
 
   <h2>Animações</h2>
   <div id="anims"></div>
+  <label class="chk"><input id="loopChk" type="checkbox" checked> Repetir a animação (loop)</label>
+  <label class="chk"><input id="inPlace" type="checkbox" checked> Ficar no lugar (correr/andar sem sair da tela)</label>
+
+  <h2>Câmeras</h2>
+  <div id="cams"></div>
+  <div class="keys" style="margin-top:6px">Arrastar o mouse também move a câmera.</div>
 
   <h2>Voz e boca</h2>
   <div class="row"><button id="micBtn">Ligar microfone</button></div>
@@ -86,12 +92,13 @@
 
   <h2>Tela</h2>
   <select id="bg">
+    <option value="consultorio-video">Consultório médico (vídeo animado)</option>
+    <option value="consultorio">Consultório médico (imagem)</option>
     <option value="azul">Fundo azul</option>
     <option value="verde">Fundo verde (chroma key)</option>
     <option value="cinza">Fundo cinza</option>
     <option value="preto">Fundo preto</option>
     <option value="branco">Fundo branco</option>
-    <option value="consultorio">Consultório médico (cartoon)</option>
   </select>
   <label>Imagem ou vídeo de fundo (JPG, PNG, MP4)</label>
   <input id="bgFile" type="file" accept="image/*,video/*">
@@ -101,6 +108,7 @@
   <h2>Teclas</h2>
   <div class="keys">
     <kbd>1</kbd>–<kbd>9</kbd> animações · <kbd>0</kbd> parar<br>
+    <kbd>Q W E R T Y</kbd> câmeras<br>
     <kbd>Espaço</kbd> (segurar) fala simulada<br>
     <kbd>Z X C V B</kbd> (segurar) força cada boca<br>
     <kbd>M</kbd> microfone · <kbd>G</kbd> chroma · <kbd>F</kbd> tela cheia · <kbd>H</kbd> esconde painel<br>
